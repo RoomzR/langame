@@ -1,0 +1,9 @@
+{
+  "expo": {
+    "name": "RUDEMIR Admin",
+    "slug": "rudemir-admin",
+    "version": "0.1.0",
+    "userInterfaceStyle": "dark",
+    "android": { "package": "by.rudemir.admin" }
+  }
+}

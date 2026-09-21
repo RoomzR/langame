@@ -1,0 +1,959 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  GUEST
+  CASHIER
+  BARTENDER
+  CLUB_ADMIN
+  TECH_ADMIN
+  MANAGER
+  OWNER
+  SUPPORT
+  SUPERADMIN
+}
+
+enum SeatType {
+  PC
+  CONSOLE
+  VR
+}
+
+enum SeatStatus {
+  FREE
+  OCCUPIED
+  OFFLINE
+  MAINTENANCE
+  RESERVED
+}
+
+enum SessionStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum BillingMode {
+  WALLET
+  PREPAID
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum TransactionType {
+  TOPUP
+  SESSION_CHARGE
+  REFUND
+  PURCHASE
+  BONUS
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+enum LockerStatus {
+  FREE
+  OCCUPIED
+}
+
+enum MediaKind {
+  PHOTO
+  VIDEO
+}
+
+enum ShiftStatus {
+  OPEN
+  CLOSED
+}
+
+enum TournamentStatus {
+  DRAFT
+  OPEN
+  RUNNING
+  FINISHED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  phone        String   @unique
+  email        String?  @unique
+  passwordHash String
+  displayName  String
+  avatarUrl    String?
+  locale       String   @default("ru")
+  globalRole   UserRole @default(GUEST)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  clubRoles        UserClubRole[]
+  refreshTokens    RefreshToken[]
+  oauthAccounts    OAuthAccount[]
+  wallet           Wallet?
+  guestCards       GuestCard[]
+  sessions         Session[]
+  bookings         Booking[]
+  payments         Payment[]
+  orders           Order[]
+  reviews          Review[]
+  notifications    Notification[]
+  friendshipsA     Friendship[]       @relation("FriendA")
+  friendshipsB     Friendship[]       @relation("FriendB")
+  achievements     UserAchievement[]
+  adminLogs        AdminActionLog[]
+  shifts           Shift[]
+  lockers          Locker[]
+  chatMessages     ChatMessage[]
+  tournamentEntries TournamentEntry[]
+  sentCalls        AdminCall[]
+  cashCreated      CashOperation[] @relation("CashCreatedBy")
+  cashReceived     CashOperation[] @relation("CashGuest")
+  gameAccounts     GameAccount[]
+  staffProfiles    StaffProfile[]
+  guestProfiles    GuestProfile[]
+  guestEvents      GuestEvent[]
+  shiftTickets     ShiftTicket[]
+  giftCertificates GiftCertificate[]
+
+  @@map("users")
+}
+
+model UserClubRole {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  clubId    String   @db.Uuid
+  role      UserRole
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clubId])
+  @@index([clubId])
+  @@map("user_club_roles")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model OAuthAccount {
+  id         String @id @default(uuid()) @db.Uuid
+  userId     String @db.Uuid
+  provider   String
+  providerId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@map("oauth_accounts")
+}
+
+model GuestCard {
+  id         String @id @default(uuid()) @db.Uuid
+  userId     String @db.Uuid
+  cardNumber String @unique
+  pinHash    String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("guest_cards")
+}
+
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  createdAt DateTime @default(now())
+
+  clubs Club[]
+
+  @@map("organizations")
+}
+
+model Club {
+  id          String   @id @default(uuid()) @db.Uuid
+  organizationId String @db.Uuid
+  slug        String   @unique
+  name        String
+  description String   @default("")
+  city        String
+  address     String
+  lat         Float    @default(0)
+  lng         Float    @default(0)
+  timezone    String   @default("Europe/Minsk")
+  amenities   Json     @default("[]")
+  ratingAvg   Float    @default(0)
+  ratingCount Int      @default(0)
+  isPublished Boolean  @default(true)
+  modules     Json     @default("{}")
+  settings    Json     @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  media        ClubMedia[]
+  zones        Zone[]
+  seats        Seat[]
+  tariffs      Tariff[]
+  sessions     Session[]
+  bookings     Booking[]
+  products     Product[]
+  orders       Order[]
+  lockers      Locker[]
+  shifts       Shift[]
+  reviews      Review[]
+  tournaments  Tournament[]
+  chatMessages ChatMessage[]
+  adminLogs    AdminActionLog[]
+  apps         ClubApp[]
+  staff        UserClubRole[]
+  hardware     HardwareProfile[]
+  adminCalls   AdminCall[]
+  cashOps      CashOperation[]
+  gameAccounts GameAccount[]
+  pcTypes      PcType[]
+  staffProfiles StaffProfile[]
+  guestGroups  GuestGroup[]
+  guestProfiles GuestProfile[]
+  autobonusRules AutobonusRule[]
+  phoneBlacklist PhoneBlacklist[]
+  giftCertificates GiftCertificate[]
+  promoCodes   PromoCode[]
+  guestEvents  GuestEvent[]
+  shiftTickets ShiftTicket[]
+  agentCommands AgentCommand[]
+  seatAgents   SeatAgent[]
+
+  @@index([city])
+  @@index([isPublished])
+  @@map("clubs")
+}
+
+model ClubMedia {
+  id       String    @id @default(uuid()) @db.Uuid
+  clubId   String    @db.Uuid
+  url      String
+  kind     MediaKind @default(PHOTO)
+  sortOrder Int      @default(0)
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@map("club_media")
+}
+
+model Zone {
+  id        String @id @default(uuid()) @db.Uuid
+  clubId    String @db.Uuid
+  name      String
+  sortOrder Int    @default(0)
+  color     String @default("#3b82f6")
+
+  club    Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  seats   Seat[]
+  tariffs Tariff[]
+
+  @@index([clubId])
+  @@map("zones")
+}
+
+model HardwareProfile {
+  id      String @id @default(uuid()) @db.Uuid
+  clubId  String @db.Uuid
+  name    String
+  cpu     String @default("")
+  gpu     String @default("")
+  ram     String @default("")
+  monitor String @default("")
+
+  club  Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  seats Seat[]
+
+  @@map("hardware_profiles")
+}
+
+model Seat {
+  id                String     @id @default(uuid()) @db.Uuid
+  clubId            String     @db.Uuid
+  zoneId            String     @db.Uuid
+  hardwareProfileId String?    @db.Uuid
+  label             String
+  type              SeatType   @default(PC)
+  status            SeatStatus @default(FREE)
+  posX              Float      @default(0)
+  posY              Float      @default(0)
+  pcTypeId          String?    @db.Uuid
+  createdAt         DateTime   @default(now())
+
+  club            Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  zone            Zone             @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  hardwareProfile HardwareProfile? @relation(fields: [hardwareProfileId], references: [id])
+  pcType          PcType?          @relation(fields: [pcTypeId], references: [id])
+  sessions        Session[]
+  bookings        Booking[]
+  telemetry       SeatTelemetry?
+  chatMessages    ChatMessage[]
+  adminCalls      AdminCall[]
+  agent           SeatAgent?
+  agentCommands   AgentCommand[]
+
+  @@unique([clubId, label])
+  @@index([clubId, status])
+  @@index([zoneId])
+  @@map("seats")
+}
+
+model SeatTelemetry {
+  id               String   @id @default(uuid()) @db.Uuid
+  seatId           String   @unique @db.Uuid
+  currentProcess   String?
+  lastHeartbeatAt  DateTime @default(now())
+
+  seat Seat @relation(fields: [seatId], references: [id], onDelete: Cascade)
+
+  @@map("seat_telemetry")
+}
+
+model SeatAgent {
+  id            String    @id @default(uuid()) @db.Uuid
+  seatId        String    @unique @db.Uuid
+  clubId        String    @db.Uuid
+  tokenHash     String    @default("")
+  pairCodeHash  String    @default("")
+  pairExpiresAt DateTime?
+  pairedAt      DateTime?
+  lastSeenAt    DateTime?
+  agentVersion  String    @default("")
+  hostname      String    @default("")
+  cpuTemp       Float?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  seat Seat @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@index([clubId])
+  @@index([tokenHash])
+  @@map("seat_agents")
+}
+
+model Tariff {
+  id                   String  @id @default(uuid()) @db.Uuid
+  clubId               String  @db.Uuid
+  zoneId               String? @db.Uuid
+  name                 String
+  pricePerHourKopecks  Int
+  minMinutes           Int     @default(30)
+  isActive             Boolean @default(true)
+
+  club     Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  zone     Zone?     @relation(fields: [zoneId], references: [id])
+  sessions Session[]
+  bookings Booking[]
+
+  @@index([clubId])
+  @@map("tariffs")
+}
+
+model ClubApp {
+  id      String @id @default(uuid()) @db.Uuid
+  clubId  String @db.Uuid
+  name    String
+  path    String
+  iconUrl String @default("")
+  sortOrder Int  @default(0)
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@map("club_apps")
+}
+
+model Session {
+  id                      String        @id @default(uuid()) @db.Uuid
+  clubId                  String        @db.Uuid
+  seatId                  String        @db.Uuid
+  userId                  String        @db.Uuid
+  tariffId                String        @db.Uuid
+  bookingId               String?       @db.Uuid
+  status                  SessionStatus @default(ACTIVE)
+  billingMode             BillingMode   @default(WALLET)
+  remainingSeconds        Int?
+  accumulatedActiveSeconds Int          @default(0)
+  totalChargedKopecks     Int           @default(0)
+  startedAt               DateTime      @default(now())
+  endedAt                 DateTime?
+  pausedAt                DateTime?
+  lastTickAt              DateTime?
+  endReason               String?
+
+  club     Club      @relation(fields: [clubId], references: [id])
+  seat     Seat      @relation(fields: [seatId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+  tariff   Tariff    @relation(fields: [tariffId], references: [id])
+  booking  Booking?  @relation(fields: [bookingId], references: [id])
+  txns     Transaction[]
+
+  @@index([clubId, status])
+  @@index([seatId, status])
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Booking {
+  id               String        @id @default(uuid()) @db.Uuid
+  clubId           String        @db.Uuid
+  seatId           String        @db.Uuid
+  userId           String        @db.Uuid
+  tariffId         String        @db.Uuid
+  startsAt         DateTime
+  endsAt           DateTime
+  status           BookingStatus @default(CONFIRMED)
+  guestCount       Int           @default(1)
+  autoStartSession Boolean       @default(true)
+  guestName        String?
+  guestPhone       String?
+  period           Unsupported("tstzrange")?
+  createdAt        DateTime      @default(now())
+
+  club     Club      @relation(fields: [clubId], references: [id])
+  seat     Seat      @relation(fields: [seatId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+  tariff   Tariff    @relation(fields: [tariffId], references: [id])
+  sessions Session[]
+
+  @@index([clubId, startsAt])
+  @@index([seatId, startsAt])
+  @@index([userId])
+  @@map("bookings")
+}
+
+model Wallet {
+  id             String @id @default(uuid()) @db.Uuid
+  userId         String @unique @db.Uuid
+  balanceKopecks Int    @default(0)
+  bonusKopecks   Int    @default(0)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@map("wallets")
+}
+
+model Transaction {
+  id             String          @id @default(uuid()) @db.Uuid
+  walletId       String          @db.Uuid
+  amountKopecks  Int
+  type           TransactionType
+  sessionId      String?         @db.Uuid
+  paymentId      String?         @db.Uuid
+  orderId        String?         @db.Uuid
+  description    String          @default("")
+  createdAt      DateTime        @default(now())
+
+  wallet  Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  session Session? @relation(fields: [sessionId], references: [id])
+  payment Payment? @relation(fields: [paymentId], references: [id])
+  order   Order?   @relation(fields: [orderId], references: [id])
+
+  @@index([walletId, createdAt])
+  @@map("transactions")
+}
+
+model Payment {
+  id             String        @id @default(uuid()) @db.Uuid
+  userId         String        @db.Uuid
+  amountKopecks  Int
+  status         PaymentStatus @default(PENDING)
+  provider       String        @default("mock")
+  providerRef    String?
+  purpose        String        @default("topup")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+
+  @@index([userId])
+  @@map("payments")
+}
+
+model Product {
+  id              String  @id @default(uuid()) @db.Uuid
+  clubId          String  @db.Uuid
+  name            String
+  priceKopecks    Int
+  category        String  @default("bar")
+  isActive        Boolean @default(true)
+
+  club       Club        @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([clubId])
+  @@map("products")
+}
+
+model Order {
+  id              String      @id @default(uuid()) @db.Uuid
+  clubId          String      @db.Uuid
+  userId          String      @db.Uuid
+  seatId          String?     @db.Uuid
+  status          OrderStatus @default(PAID)
+  totalKopecks    Int         @default(0)
+  createdAt       DateTime    @default(now())
+
+  club         Club          @relation(fields: [clubId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
+  items        OrderItem[]
+  transactions Transaction[]
+
+  @@index([clubId, createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id           String @id @default(uuid()) @db.Uuid
+  orderId      String @db.Uuid
+  productId    String @db.Uuid
+  qty          Int    @default(1)
+  priceKopecks Int
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model Locker {
+  id           String       @id @default(uuid()) @db.Uuid
+  clubId       String       @db.Uuid
+  number       String
+  status       LockerStatus @default(FREE)
+  guestUserId  String?      @db.Uuid
+  occupiedAt   DateTime?
+
+  club  Club  @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  guest User? @relation(fields: [guestUserId], references: [id])
+
+  @@unique([clubId, number])
+  @@map("lockers")
+}
+
+model Shift {
+  id        String      @id @default(uuid()) @db.Uuid
+  clubId    String      @db.Uuid
+  userId    String      @db.Uuid
+  status    ShiftStatus @default(OPEN)
+  startedAt DateTime    @default(now())
+  endedAt   DateTime?
+
+  club Club @relation(fields: [clubId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([clubId, status])
+  @@map("shifts")
+}
+
+model AdminActionLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  clubId    String   @db.Uuid
+  userId    String   @db.Uuid
+  action    String
+  payload   Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  club Club @relation(fields: [clubId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([clubId, createdAt])
+  @@map("admin_action_logs")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  clubId    String   @db.Uuid
+  seatId    String?  @db.Uuid
+  senderId  String   @db.Uuid
+  body      String
+  createdAt DateTime @default(now())
+
+  club   Club  @relation(fields: [clubId], references: [id])
+  seat   Seat? @relation(fields: [seatId], references: [id])
+  sender User  @relation(fields: [senderId], references: [id])
+
+  @@index([clubId, createdAt])
+  @@map("chat_messages")
+}
+
+model AdminCall {
+  id        String   @id @default(uuid()) @db.Uuid
+  clubId    String   @db.Uuid
+  seatId    String   @db.Uuid
+  userId    String   @db.Uuid
+  message   String   @default("")
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  club Club @relation(fields: [clubId], references: [id])
+  seat Seat @relation(fields: [seatId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([clubId, resolved])
+  @@map("admin_calls")
+}
+
+model Tournament {
+  id        String           @id @default(uuid()) @db.Uuid
+  clubId    String           @db.Uuid
+  name      String
+  game      String           @default("")
+  startsAt  DateTime
+  status    TournamentStatus @default(OPEN)
+  bracket   Json             @default("{}")
+
+  club    Club              @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  entries TournamentEntry[]
+
+  @@map("tournaments")
+}
+
+model TournamentEntry {
+  id           String @id @default(uuid()) @db.Uuid
+  tournamentId String @db.Uuid
+  userId       String @db.Uuid
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@unique([tournamentId, userId])
+  @@map("tournament_entries")
+}
+
+model Friendship {
+  id       String           @id @default(uuid()) @db.Uuid
+  userId   String           @db.Uuid
+  friendId String           @db.Uuid
+  status   FriendshipStatus @default(PENDING)
+
+  user   User @relation("FriendA", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("FriendB", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+  @@map("friendships")
+}
+
+model Achievement {
+  id          String @id @default(uuid()) @db.Uuid
+  code        String @unique
+  name        String
+  description String @default("")
+
+  users UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String @id @default(uuid()) @db.Uuid
+  userId        String @db.Uuid
+  achievementId String @db.Uuid
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+model Review {
+  id        String   @id @default(uuid()) @db.Uuid
+  clubId    String   @db.Uuid
+  userId    String   @db.Uuid
+  rating    Int
+  text      String   @default("")
+  createdAt DateTime @default(now())
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([clubId, userId])
+  @@map("reviews")
+}
+
+model Notification {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  type      String
+  title     String
+  body      String
+  payload   Json      @default("{}")
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+model NewsArticle {
+  id          String   @id @default(uuid()) @db.Uuid
+  slug        String   @unique
+  title       String
+  excerpt     String   @default("")
+  body        String   @default("")
+  locale      String   @default("ru")
+  publishedAt DateTime @default(now())
+
+  @@map("news_articles")
+}
+
+model CashOperation {
+  id            String    @id @default(uuid()) @db.Uuid
+  clubId        String    @db.Uuid
+  createdById   String    @db.Uuid
+  userId        String?   @db.Uuid
+  guestName     String?
+  amountKopecks Int
+  method        String
+  status        String
+  receiptNo     String    @default("")
+  note          String    @default("")
+  createdAt     DateTime  @default(now())
+  postedAt      DateTime?
+
+  club      Club  @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  createdBy User  @relation("CashCreatedBy", fields: [createdById], references: [id])
+  user      User? @relation("CashGuest", fields: [userId], references: [id])
+
+  @@index([clubId, status])
+  @@map("cash_operations")
+}
+
+model GameAccount {
+  id        String   @id @default(uuid()) @db.Uuid
+  clubId    String   @db.Uuid
+  userId    String?  @db.Uuid
+  guestName String
+  platform  String
+  login     String
+  note      String   @default("")
+  createdAt DateTime @default(now())
+
+  club Club  @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([clubId])
+  @@map("game_accounts")
+}
+
+model PcType {
+  id     String @id @default(uuid()) @db.Uuid
+  clubId String @db.Uuid
+  name   String
+
+  club  Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  seats Seat[]
+
+  @@index([clubId])
+  @@map("pc_types")
+}
+
+model StaffProfile {
+  id           String    @id @default(uuid()) @db.Uuid
+  clubId       String    @db.Uuid
+  userId       String    @db.Uuid
+  login        String    @default("")
+  status       String    @default("ACTIVE")
+  workPoint    String    @default("")
+  schedule     String    @default("День")
+  wageKopecks  Int       @default(0)
+  dismissedAt  DateTime?
+  firstShiftAt DateTime?
+  createdAt    DateTime  @default(now())
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, userId])
+  @@map("staff_profiles")
+}
+
+model GuestGroup {
+  id        String  @id @default(uuid()) @db.Uuid
+  clubId    String  @db.Uuid
+  name      String
+  isDefault Boolean @default(false)
+
+  club     Club           @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  profiles GuestProfile[]
+
+  @@index([clubId])
+  @@map("guest_groups")
+}
+
+model GuestProfile {
+  id        String    @id @default(uuid()) @db.Uuid
+  clubId    String    @db.Uuid
+  userId    String    @db.Uuid
+  groupId   String?   @db.Uuid
+  gender    String    @default("")
+  birthday  DateTime?
+  document  String    @default("")
+
+  club  Club        @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group GuestGroup? @relation(fields: [groupId], references: [id])
+
+  @@unique([clubId, userId])
+  @@map("guest_profiles")
+}
+
+model AutobonusRule {
+  id               String  @id @default(uuid()) @db.Uuid
+  clubId           String  @db.Uuid
+  name             String
+  percent          Int     @default(0)
+  minSpendKopecks  Int     @default(0)
+  active           Boolean @default(true)
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@index([clubId])
+  @@map("autobonus_rules")
+}
+
+model PhoneBlacklist {
+  id        String   @id @default(uuid()) @db.Uuid
+  clubId    String   @db.Uuid
+  phone     String
+  reason    String   @default("")
+  createdAt DateTime @default(now())
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, phone])
+  @@map("phone_blacklist")
+}
+
+model GiftCertificate {
+  id            String    @id @default(uuid()) @db.Uuid
+  clubId        String    @db.Uuid
+  code          String
+  amountKopecks Int
+  status        String    @default("NEW")
+  userId        String?   @db.Uuid
+  createdAt     DateTime  @default(now())
+  redeemedAt    DateTime?
+
+  club Club  @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id])
+
+  @@unique([clubId, code])
+  @@map("gift_certificates")
+}
+
+model PromoCode {
+  id      String    @id @default(uuid()) @db.Uuid
+  clubId  String    @db.Uuid
+  code    String
+  percent Int       @default(0)
+  active  Boolean   @default(true)
+  startsAt DateTime?
+  endsAt   DateTime?
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, code])
+  @@map("promo_codes")
+}
+
+model GuestEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  clubId    String   @db.Uuid
+  userId    String?  @db.Uuid
+  actorId   String?
+  kind      String
+  payload   Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  club Club  @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([clubId, kind, createdAt])
+  @@map("guest_events")
+}
+
+model ShiftTicket {
+  id          String   @id @default(uuid()) @db.Uuid
+  clubId      String   @db.Uuid
+  createdById String   @db.Uuid
+  title       String
+  body        String   @default("")
+  status      String   @default("OPEN")
+  createdAt   DateTime @default(now())
+
+  club      Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  @@index([clubId, status])
+  @@map("shift_tickets")
+}
+
+model AgentCommand {
+  id        String    @id @default(uuid()) @db.Uuid
+  clubId    String    @db.Uuid
+  seatId    String?   @db.Uuid
+  command   String
+  payload   Json      @default("{}")
+  status    String    @default("QUEUED")
+  result    String    @default("")
+  ackedAt   DateTime?
+  createdAt DateTime  @default(now())
+
+  club Club  @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  seat Seat? @relation(fields: [seatId], references: [id], onDelete: SetNull)
+
+  @@index([clubId, status])
+  @@index([seatId, status])
+  @@map("agent_commands")
+}

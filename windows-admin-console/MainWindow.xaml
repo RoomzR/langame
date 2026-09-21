@@ -1,0 +1,367 @@
+﻿<Window x:Class="Rudemir.AdminConsole.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="RUDEMIR Admin Console"
+        Height="860" Width="1380" MinWidth="1100" MinHeight="700"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource Void}"
+        FontFamily="Segoe UI Variable Text, Segoe UI">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="32"/>
+        </Grid.RowDefinitions>
+
+        <Border Background="{StaticResource Velvet}" BorderBrush="{StaticResource Gold}" BorderThickness="0,0,0,1">
+            <Grid Margin="20,0">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="RUDEMIR" FontWeight="Bold" FontSize="20" Foreground="{StaticResource Gold}"/>
+                    <TextBlock Text="Консоль клуба" Margin="12,2,0,0" Foreground="{StaticResource Mute}"/>
+                    <TextBlock x:Name="ClubLabel" Margin="20,0,0,0" FontSize="15" Foreground="{StaticResource Paper}" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="ClubBox" Width="200" Margin="12,0,0,0" Visibility="Collapsed" SelectionChanged="ClubBox_Changed"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock x:Name="ShiftLabel" Foreground="{StaticResource Mute}" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="WhoLabel" Foreground="{StaticResource Paper}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <Button x:Name="LogoutBtn" Content="Выйти" Style="{StaticResource Ghost}" Height="32" Visibility="Collapsed" Click="Logout_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <TabControl x:Name="Tabs" Grid.Row="1" Margin="20,8,20,0" SelectionChanged="Tabs_Changed">
+            <!-- Зал -->
+            <TabItem Header="Зал">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2.2*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="360"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,8">
+                            <TextBlock x:Name="HallSummary" VerticalAlignment="Center" Foreground="{StaticResource Mute}"/>
+                            <TextBlock Text="  ·  выбрано:" Foreground="{StaticResource Mute}" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="BulkCount" Text="0" Foreground="{StaticResource Paper}" VerticalAlignment="Center" Margin="4,0,8,0"/>
+                            <Button Content="Заблокировать" Style="{StaticResource Ghost}" Height="30" Margin="4,0" Click="BulkLock_Click"/>
+                            <Button Content="Разблокировать" Style="{StaticResource Ghost}" Height="30" Margin="4,0" Click="BulkUnlock_Click"/>
+                            <Button Content="Перезагрузить" Style="{StaticResource Ghost}" Height="30" Margin="4,0" Click="BulkReboot_Click"/>
+                            <Button Content="Снять выбор" Style="{StaticResource Ghost}" Height="30" Margin="4,0" Click="BulkClear_Click"/>
+                        </StackPanel>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <StackPanel x:Name="ZonesPanel"/>
+                        </ScrollViewer>
+                    </Grid>
+                    <Border Grid.Column="2" Background="{StaticResource Velvet}" CornerRadius="6" Padding="16">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <TextBlock x:Name="SelectedLabel" Style="{StaticResource H2}" Text="Выберите ПК"/>
+                                <TextBlock x:Name="SelectedInfo" Foreground="{StaticResource Mute}" TextWrapping="Wrap"/>
+
+                                <StackPanel x:Name="StartPane">
+                                    <TextBlock Text="Гость (телефон, имя, карта)" Style="{StaticResource Label}"/>
+                                    <TextBox x:Name="GuestSearchBox" TextChanged="GuestSearch_Changed"/>
+                                    <ListBox x:Name="GuestSuggest" MaxHeight="120" Background="{StaticResource VelvetDeep}" Foreground="{StaticResource Fog}" BorderThickness="0" Visibility="Collapsed" SelectionChanged="GuestSuggest_Selected"/>
+                                    <TextBlock Text="Тариф" Style="{StaticResource Label}"/>
+                                    <ComboBox x:Name="TariffBox"/>
+                                    <TextBlock Text="Режим" Style="{StaticResource Label}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton x:Name="ModeWallet" Content="По балансу" IsChecked="True" Foreground="{StaticResource Fog}" Margin="0,0,16,0"/>
+                                        <RadioButton x:Name="ModePrepaid" Content="Пакет минут" Foreground="{StaticResource Fog}"/>
+                                        <TextBox x:Name="PrepaidBox" Text="60" Width="60" Margin="8,0,0,0" Height="30"/>
+                                    </StackPanel>
+                                    <Button Content="Запустить сессию" Style="{StaticResource Primary}" Margin="0,12,0,0" Click="Start_Click"/>
+                                </StackPanel>
+
+                                <StackPanel x:Name="SessionPane" Visibility="Collapsed">
+                                    <UniformGrid Columns="2" Margin="0,12,0,0">
+                                        <Button x:Name="PauseBtn" Content="Пауза" Style="{StaticResource Ghost}" Margin="0,4,4,0" Click="Pause_Click"/>
+                                        <Button Content="Завершить" Style="{StaticResource Danger}" Margin="4,4,0,0" Click="Stop_Click"/>
+                                    </UniformGrid>
+                                    <TextBlock Text="Продлить, минут" Style="{StaticResource Label}"/>
+                                    <DockPanel>
+                                        <Button Content="Продлить" Style="{StaticResource GoldBtn}" Width="110" DockPanel.Dock="Right" Margin="8,0,0,0" Click="Extend_Click"/>
+                                        <TextBox x:Name="MinutesBox" Text="30"/>
+                                    </DockPanel>
+                                    <TextBlock Text="Перенести на свободный ПК" Style="{StaticResource Label}"/>
+                                    <ComboBox x:Name="TransferBox" SelectionChanged="Transfer_Changed"/>
+                                </StackPanel>
+
+                                <TextBlock Text="Управление ПК" Style="{StaticResource Label}" Margin="0,18,0,4"/>
+                                <UniformGrid Columns="2">
+                                    <Button Content="Заблокировать" Style="{StaticResource Ghost}" Margin="0,4,4,0" Tag="LOCK" Click="Command_Click"/>
+                                    <Button Content="Разблокировать" Style="{StaticResource Ghost}" Margin="4,4,0,0" Tag="UNLOCK" Click="Command_Click"/>
+                                    <Button Content="Перезагрузить" Style="{StaticResource Ghost}" Margin="0,4,4,0" Tag="REBOOT" Click="Command_Click"/>
+                                    <Button Content="Выключить" Style="{StaticResource Ghost}" Margin="4,4,0,0" Tag="SHUTDOWN" Click="Command_Click"/>
+                                </UniformGrid>
+                                <Button x:Name="MaintBtn" Content="Технический режим" Style="{StaticResource Ghost}" Click="Maintenance_Click"/>
+                                <Button Content="Код агента" Style="{StaticResource GoldBtn}" Click="Pair_Click"/>
+                                <TextBlock x:Name="PairCodeLabel" FontSize="28" FontWeight="Bold" Foreground="{StaticResource Gold}" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                                <TextBlock Text="Сообщение на экран гостя" Style="{StaticResource Label}"/>
+                                <DockPanel>
+                                    <Button Content="Отправить" Style="{StaticResource Ghost}" Width="100" DockPanel.Dock="Right" Margin="8,0,0,0" Click="Chat_Click"/>
+                                    <TextBox x:Name="ChatBox"/>
+                                </DockPanel>
+                                <TextBlock x:Name="HallStatus" Foreground="{StaticResource Gold}" TextWrapping="Wrap" Margin="0,14,0,0"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- Брони -->
+            <TabItem Header="Брони">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="340"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,8">
+                            <CheckBox x:Name="BookingsAll" Content="Показать историю за 7 дней" Foreground="{StaticResource Fog}" Checked="Bookings_Reload" Unchecked="Bookings_Reload"/>
+                        </StackPanel>
+                        <DataGrid x:Name="BookingsGrid" Grid.Row="1">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Начало" Binding="{Binding Starts}" Width="130"/>
+                                <DataGridTextColumn Header="Конец" Binding="{Binding Ends}" Width="70"/>
+                                <DataGridTextColumn Header="ПК" Binding="{Binding Seat}" Width="80"/>
+                                <DataGridTextColumn Header="Гость" Binding="{Binding Guest}" Width="*"/>
+                                <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="140"/>
+                                <DataGridTextColumn Header="Тариф" Binding="{Binding Tariff}" Width="110"/>
+                                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="120"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="Гость пришёл — посадить" Style="{StaticResource Primary}" Click="Arrive_Click"/>
+                            <Button Content="Отменить бронь" Style="{StaticResource Danger}" Margin="8,4,0,0" Click="CancelBooking_Click"/>
+                            <TextBlock x:Name="BookingsStatus" Foreground="{StaticResource Gold}" Margin="16,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                    <Border Grid.Column="2" Background="{StaticResource Velvet}" CornerRadius="6" Padding="16">
+                        <StackPanel>
+                            <TextBlock Text="Новая бронь" Style="{StaticResource H2}"/>
+                            <TextBlock Text="Гость" Style="{StaticResource Label}"/>
+                            <TextBox x:Name="BkGuestBox" TextChanged="BkGuest_Changed"/>
+                            <ListBox x:Name="BkGuestSuggest" MaxHeight="110" Background="{StaticResource VelvetDeep}" Foreground="{StaticResource Fog}" BorderThickness="0" Visibility="Collapsed" SelectionChanged="BkGuestSuggest_Selected"/>
+                            <TextBlock Text="ПК" Style="{StaticResource Label}"/>
+                            <ComboBox x:Name="BkSeatBox"/>
+                            <TextBlock Text="Тариф" Style="{StaticResource Label}"/>
+                            <ComboBox x:Name="BkTariffBox"/>
+                            <TextBlock Text="Дата и время" Style="{StaticResource Label}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <DatePicker x:Name="BkDate" Width="140" Height="38"/>
+                                <ComboBox x:Name="BkHour" Width="80" Margin="8,0,0,0"/>
+                                <ComboBox x:Name="BkHours" Width="70" Margin="8,0,0,0"/>
+                            </StackPanel>
+                            <Button Content="Создать бронь" Style="{StaticResource Primary}" Margin="0,14,0,0" Click="CreateBooking_Click"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- Гости -->
+            <TabItem Header="Гости">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="340"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBox x:Name="GuestsSearch" Margin="0,4,0,8" TextChanged="GuestsSearch_Changed" ToolTip="Телефон, имя или карта"/>
+                        <DataGrid x:Name="GuestsGrid" Grid.Row="1" SelectionChanged="GuestsGrid_Selected">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="*"/>
+                                <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="140"/>
+                                <DataGridTextColumn Header="Баланс" Binding="{Binding Balance}" Width="100"/>
+                                <DataGridTextColumn Header="Бонусы" Binding="{Binding Bonus}" Width="90"/>
+                                <DataGridTextColumn Header="Сессий" Binding="{Binding Sessions}" Width="70"/>
+                                <DataGridTextColumn Header="Карты" Binding="{Binding Cards}" Width="120"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                    <Border Grid.Column="2" Background="{StaticResource Velvet}" CornerRadius="6" Padding="16">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <TextBlock x:Name="GuestTitle" Style="{StaticResource H2}" Text="Выберите гостя"/>
+                                <TextBlock Text="Пополнить наличными, Br" Style="{StaticResource Label}"/>
+                                <DockPanel>
+                                    <Button Content="Пополнить" Style="{StaticResource Primary}" Width="110" DockPanel.Dock="Right" Margin="8,0,0,0" Click="Topup_Click"/>
+                                    <TextBox x:Name="TopupBox" Text="10"/>
+                                </DockPanel>
+                                <TextBlock Text="Начислить бонус, Br" Style="{StaticResource Label}"/>
+                                <DockPanel>
+                                    <Button Content="Начислить" Style="{StaticResource GoldBtn}" Width="110" DockPanel.Dock="Right" Margin="8,0,0,0" Click="Bonus_Click"/>
+                                    <TextBox x:Name="BonusBox" Text="2"/>
+                                </DockPanel>
+                                <TextBlock Text="Выдать карту гостя" Style="{StaticResource Label}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox x:Name="CardNumberBox" Width="150" ToolTip="Номер"/>
+                                    <TextBox x:Name="CardPinBox" Width="70" Margin="8,0" ToolTip="PIN"/>
+                                    <Button Content="Выдать" Style="{StaticResource Ghost}" Width="70" Click="IssueCard_Click"/>
+                                </StackPanel>
+
+                                <TextBlock Text="Новый гость" Style="{StaticResource H2}" Margin="0,24,0,0"/>
+                                <TextBlock Text="Имя" Style="{StaticResource Label}"/>
+                                <TextBox x:Name="RegName"/>
+                                <TextBlock Text="Телефон" Style="{StaticResource Label}"/>
+                                <TextBox x:Name="RegPhone" Text="+375"/>
+                                <TextBlock Text="Пароль (от 6 символов)" Style="{StaticResource Label}"/>
+                                <TextBox x:Name="RegPassword"/>
+                                <Button Content="Зарегистрировать" Style="{StaticResource Primary}" Margin="0,12,0,0" Click="Register_Click"/>
+                                <TextBlock x:Name="GuestsStatus" Foreground="{StaticResource Gold}" TextWrapping="Wrap" Margin="0,14,0,0"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- Касса -->
+            <TabItem Header="Касса">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="360"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="200"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Товары — нажмите, чтобы добавить в чек" Foreground="{StaticResource Mute}" Margin="0,4,0,8"/>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <WrapPanel x:Name="ProductsPanel" ItemWidth="180" ItemHeight="84"/>
+                        </ScrollViewer>
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8">
+                            <TextBox x:Name="NewProductName" Width="220" ToolTip="Название"/>
+                            <TextBox x:Name="NewProductPrice" Width="80" Margin="8,0" ToolTip="Цена, Br"/>
+                            <ComboBox x:Name="NewProductCat" Width="110">
+                                <ComboBoxItem Content="Бар" Tag="bar" IsSelected="True"/>
+                                <ComboBoxItem Content="Мерч" Tag="merch"/>
+                                <ComboBoxItem Content="Услуга" Tag="service"/>
+                            </ComboBox>
+                            <Button Content="Добавить товар" Style="{StaticResource Ghost}" Margin="8,0,0,0" Click="AddProduct_Click"/>
+                        </StackPanel>
+                        <DataGrid x:Name="OrdersGrid" Grid.Row="3">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Время" Binding="{Binding Time}" Width="70"/>
+                                <DataGridTextColumn Header="Состав" Binding="{Binding Items}" Width="*"/>
+                                <DataGridTextColumn Header="Гость" Binding="{Binding Guest}" Width="160"/>
+                                <DataGridTextColumn Header="Сумма" Binding="{Binding Total}" Width="90"/>
+                                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                    <Border Grid.Column="2" Background="{StaticResource Paper}" CornerRadius="6" Padding="16">
+                        <StackPanel>
+                            <TextBlock Text="Чек" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Void}"/>
+                            <ItemsControl x:Name="CartList" Margin="0,8,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,3">
+                                            <TextBlock Text="{Binding Line}" Foreground="{StaticResource Void}"/>
+                                            <TextBlock Text="{Binding Sum}" Foreground="{StaticResource Void}" HorizontalAlignment="Right"/>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <DockPanel Margin="0,10,0,0">
+                                <TextBlock Text="Итого" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource Void}"/>
+                                <TextBlock x:Name="CartTotal" Text="0.00 Br" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource Void}" HorizontalAlignment="Right"/>
+                            </DockPanel>
+                            <TextBlock Text="Списать с гостя" Foreground="#80110A20" FontSize="12" Margin="0,12,0,4"/>
+                            <TextBox x:Name="CashGuestBox" Background="White" Foreground="{StaticResource Void}" BorderBrush="#33000000" TextChanged="CashGuest_Changed"/>
+                            <ListBox x:Name="CashGuestSuggest" MaxHeight="110" Background="White" Foreground="{StaticResource Void}" BorderBrush="#33000000" Visibility="Collapsed" SelectionChanged="CashGuestSuggest_Selected"/>
+                            <TextBlock Text="Доставить на ПК" Foreground="#80110A20" FontSize="12" Margin="0,10,0,4"/>
+                            <ComboBox x:Name="CashSeatBox" Background="White" Foreground="{StaticResource Void}" BorderBrush="#33000000"/>
+                            <Button Content="Продать и списать" Style="{StaticResource Primary}" Margin="0,14,0,0" Click="Sell_Click"/>
+                            <Button Content="Очистить чек" Style="{StaticResource Ghost}" Foreground="{StaticResource Void}" Background="#15000000" Click="ClearCart_Click"/>
+                            <Button Content="Выдать выбранный заказ" Style="{StaticResource Ghost}" Foreground="{StaticResource Void}" Background="#15000000" Click="Deliver_Click"/>
+                            <TextBlock x:Name="CashStatus" Foreground="{StaticResource Void}" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- Смена -->
+            <TabItem Header="Смена и отчёты">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="380"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <Border Background="{StaticResource Velvet}" CornerRadius="6" Padding="16" Margin="0,4,0,0">
+                                <DockPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="Смена" Foreground="{StaticResource Mute}" FontSize="12"/>
+                                        <TextBlock x:Name="ShiftTitle" Style="{StaticResource H2}" Text="—"/>
+                                    </StackPanel>
+                                    <Button x:Name="ShiftBtn" Content="Открыть смену" Style="{StaticResource Primary}" Width="160" HorizontalAlignment="Right" Click="Shift_Click"/>
+                                </DockPanel>
+                            </Border>
+                            <UniformGrid Columns="4" Margin="0,16,0,0">
+                                <StackPanel><TextBlock Text="Загрузка сейчас" Foreground="{StaticResource Mute}" FontSize="12"/><TextBlock x:Name="StatOcc" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource Paper}"/></StackPanel>
+                                <StackPanel><TextBlock Text="Сессий сегодня" Foreground="{StaticResource Mute}" FontSize="12"/><TextBlock x:Name="StatSessions" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource Paper}"/></StackPanel>
+                                <StackPanel><TextBlock Text="Выручка сессий" Foreground="{StaticResource Mute}" FontSize="12"/><TextBlock x:Name="StatRevenue" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource Paper}"/></StackPanel>
+                                <StackPanel><TextBlock Text="Бар и мерч" Foreground="{StaticResource Mute}" FontSize="12"/><TextBlock x:Name="StatBar" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource Paper}"/></StackPanel>
+                            </UniformGrid>
+                            <TextBlock Text="Загрузка за 24 часа" Style="{StaticResource H2}" Margin="0,24,0,8"/>
+                            <StackPanel x:Name="OccChart" Orientation="Horizontal" Height="120" VerticalAlignment="Bottom"/>
+                            <TextBlock Text="Выручка за 7 дней" Style="{StaticResource H2}" Margin="0,24,0,8"/>
+                            <StackPanel x:Name="RevChart"/>
+                            <TextBlock x:Name="RetentionLabel" Foreground="{StaticResource Fog}" Margin="0,24,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Вызовы администратора" Style="{StaticResource H2}" Margin="0,4,0,8"/>
+                            <ListBox x:Name="CallsList" Background="Transparent" Foreground="{StaticResource Fog}" BorderThickness="0" MaxHeight="220"/>
+                            <Button Content="Закрыть выбранный вызов" Style="{StaticResource Ghost}" Click="ResolveCall_Click"/>
+                            <TextBlock Text="Прошлые смены" Style="{StaticResource H2}" Margin="0,20,0,8"/>
+                            <ListBox x:Name="ShiftsList" Background="Transparent" Foreground="{StaticResource Fog}" BorderThickness="0" MaxHeight="220"/>
+                            <TextBlock x:Name="ShiftStatus" Foreground="{StaticResource Gold}" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="2" Background="{StaticResource Velvet}">
+            <TextBlock x:Name="LogLabel" Margin="20,0" VerticalAlignment="Center" Foreground="{StaticResource Mute}"/>
+        </Border>
+
+        <!-- Login overlay -->
+        <Border x:Name="LoginOverlay" Grid.RowSpan="3" Background="#F20A0810">
+            <Border Background="{StaticResource Velvet}" CornerRadius="8" Padding="28" Width="380" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="RUDEMIR" FontSize="30" FontWeight="Bold" Foreground="{StaticResource Gold}"/>
+                    <TextBlock Text="Консоль администратора смены" Foreground="{StaticResource Mute}" Margin="0,4,0,18"/>
+                    <TextBlock Text="Телефон" Style="{StaticResource Label}"/>
+                    <TextBox x:Name="PhoneBox" Text="+375291000003"/>
+                    <TextBlock Text="Пароль" Style="{StaticResource Label}"/>
+                    <PasswordBox x:Name="PasswordBox"/>
+                    <Button Content="Войти" Style="{StaticResource Primary}" Margin="0,16,0,0" Click="Login_Click"/>
+                    <TextBlock x:Name="LoginError" Foreground="{StaticResource Busy}" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
+</Window>

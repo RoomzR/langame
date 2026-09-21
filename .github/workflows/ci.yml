@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: arenaos
+          POSTGRES_PASSWORD: arenaos
+          POSTGRES_DB: arenaos
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    env:
+      DATABASE_URL: postgresql://arenaos:arenaos@localhost:5432/arenaos
+      REDIS_URL: redis://localhost:6379
+      JWT_ACCESS_SECRET: ci-access-secret-min-32-characters
+      JWT_REFRESH_SECRET: ci-refresh-secret-min-32-characters
+      DISABLE_TICKER: "1"
+      APP_NAME: RUDEMIR
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --legacy-peer-deps
+      - run: npx prisma generate --schema backend/prisma/schema.prisma
+      - run: npx prisma db push --schema backend/prisma/schema.prisma
+      - run: npx ts-node --transpile-only backend/prisma/seed.ts
+      - run: npm run build -w backend
+      - run: npm run test:e2e -w backend

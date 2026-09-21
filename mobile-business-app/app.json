@@ -1,0 +1,9 @@
+{
+  "expo": {
+    "name": "RUDEMIR Business",
+    "slug": "rudemir-business",
+    "version": "0.1.0",
+    "userInterfaceStyle": "dark",
+    "android": { "package": "by.rudemir.business" }
+  }
+}

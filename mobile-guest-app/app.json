@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "RUDEMIR",
+    "slug": "rudemir-guest",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "ios": { "supportsTablet": true },
+    "android": { "package": "by.rudemir.guest" },
+    "extra": { "apiUrl": "http://localhost:3000" }
+  }
+}
